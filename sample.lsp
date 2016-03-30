@@ -1,0 +1,1 @@
+(console.log (.substring "Hello World" 1))
