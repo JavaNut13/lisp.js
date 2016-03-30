@@ -88,14 +88,39 @@ function parseList(text) {
   };
 }
 
+function convert(tree) {
+  if(tree.type === 'list') {
+    var func = tree.text[0]; 
+    if(func.text.startsWith('.')) {
+      var res = convert(tree.text[1]) + func.text + '(';
+      var argStart = 2;
+    } else {
+      var argStart = 1;
+      var res = func.text + '(';
+    }
+    for(var i = argStart; i < tree.text.length; i++) {
+      if(i !== argStart) {
+        res += ', ';
+      }
+      res += convert(tree.text[i]);
+    }
+    res += ')'
+    return res;
+  } else if(tree.type === 'string') {
+    return '"' + tree.text + '"';
+  } else {
+    return tree.text;
+  }
+}
+
 function parse(text) {
   var tree = parseList(text);
   
-  
-  return tree;
+  return convert(tree);
 }
 
 module.exports.parse = function(text) {
-  var lst = parse(text);
-  console.log(lst.prstrfy());
+  var code = parse(text);
+  console.log(code);
+  eval(code);
 };
