@@ -116,6 +116,8 @@ generator.list = function(obj) {
     if(funcText.startsWith('.')) {
       var res = generator.get(tree.cont[1]) + funcText + '(';
       var argStart = 2;
+    } else if(funcText.startsWith(':')) {
+      return this.get(obj.cont[1]) + '.' + funcText.slice(1);
     } else {
       var res = funcText + '(';
       var argStart = 1;

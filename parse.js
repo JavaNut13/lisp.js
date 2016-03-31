@@ -12,7 +12,7 @@ var types = {
     ignore: false
   },
   'iden': {
-    re: /^[\w\-+*!@#$%\^&\d\.=<>]+/,
+    re: /^[\w\-+*!@#$%\^&\d\.=<>:]+/,
     ignore: false
   },
   'string': {

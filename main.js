@@ -12,4 +12,9 @@ for(var i = 0; i < atoms.length; i++) {
 
 console.log(code);
 console.log('-----------');
+function map(func, items) {
+  var res = [];
+  for(var i=0; i < items.length; i++) res[i] = func(items[i]);
+  return res;
+}
 eval(code);
