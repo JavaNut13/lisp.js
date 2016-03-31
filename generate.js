@@ -114,7 +114,7 @@ generator.list = function(obj) {
     return generator.infix(obj);
   } else {
     if(funcText.startsWith('.')) {
-      var res = generator.get(tree.cont[1]) + funcText + '(';
+      var res = generator.get(obj.cont[1]) + funcText + '(';
       var argStart = 2;
     } else if(funcText.startsWith(':')) {
       return this.get(obj.cont[1]) + '.' + funcText.slice(1);
@@ -133,5 +133,5 @@ module.exports.generate = function(tree) {
   if(!func) {
     throw "Unexpected symbol " + JSON.stringify(tree.cont);
   }
-  return generator[tree.type](tree) + ';';
+  return func(tree) + ';';
 }
