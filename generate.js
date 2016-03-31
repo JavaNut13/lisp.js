@@ -1,8 +1,3 @@
-var predefs = {};
-predefs.map = "function map(items, func) {var res = []; for(var i=0;i<items.length;i++) {res.push(func(items[i]));}};"
-
-var generated_code
-
 var generator = {};
 
 generator.get = function(item) {
@@ -77,6 +72,16 @@ generator.builtins.if = function(items) {
   var ifState = generator.get(items[1]);
   var elseState = generator.get(items[2]);
   return '(' + condition + '?' + ifState + ':' + elseState + ')';
+}
+
+generator.builtins.first = function(items) {
+  var item = generator.get(items[0]);
+  return item + '[0]';
+}
+
+generator.builtins.rest = function(items) {
+  var item = generator.get(items[0]);
+  return item + '.slice(1)';
 }
 
 generator.string = function(obj) {
