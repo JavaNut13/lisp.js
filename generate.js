@@ -1,7 +1,7 @@
 var defaults = require('./defaults');
 
 function Generator() {
-  this.default_methods = {}
+  this.default_methods = {};
 }
 
 function blockWithReturn(gener, items) {
