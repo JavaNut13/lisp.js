@@ -27,31 +27,56 @@ generator.infix_operators = {
   '*': true,
   '%': true,
   '&&': true,
-  '||': true
+  '||': true,
+  '<': true,
+  '>': true,
+  '<=': true,
+  '>=': true,
+  '=': '==='
 }
 generator.infix = function(obj) {
   var operator = generator.get(obj.cont[0]);
+  if(generator.infix_operators[operator] !== true) {
+    operator = generator.infix_operators[operator];
+  }
   var args = generator.getAll(obj.cont.slice(1));
-  return args.join(operator);
+  return '(' + args.join(operator) + ')';
 }
 
 generator.builtins.fn = function(items) {
   var args = generator.getAll(items[0].cont.cont);
-  var code = 'return ' + generator.get(items[1]);
+  var statements = generator.getAll(items.slice(1));
+  var last = statements[statements.length - 1];
+  statements[statements.length - 1] = 'return ' + last;
+  var code = statements.join(';\n');
   var res = 'function(' + args.join(', ') + ') {\n';
   res += code;
-  res += '\n}'
+  res += ';\n}'
   return res;
 }
 
 generator.builtins.defn = function(items) {
   var funcName = generator.get(items[0]);
   var args = generator.getAll(items[1].cont.cont);
-  var code = 'return ' + generator.get(items[2]);
+  var statements = generator.getAll(items.slice(2));
+  var last = statements[statements.length - 1];
+  statements[statements.length - 1] = 'return ' + last;
+  var code = statements.join(';\n');
   var res = 'function ' + funcName + '(' + args.join(', ') + ') {\n';
   res += code;
-  res += '\n}'
+  res += ';\n}'
   return res;
+}
+
+generator.builtins.def = function(items) {
+  return 'var ' + generator.get(items[0]) + '=' + generator.get(items[1]);
+}
+
+generator.builtins.if = function(items) {
+  var condition = generator.get(items[0]);
+  var ifState = generator.get(items[1]);
+  var elseState = generator.get(items[2]);
+  return '(' + condition + '?' + ifState + ':' + elseState + ')';
 }
 
 generator.string = function(obj) {
@@ -87,7 +112,7 @@ generator.list = function(obj) {
     return generator.builtins[funcText](obj.cont.slice(1));
   } else if(generator.infix_operators[funcText]) {
     return generator.infix(obj);
-  } else if  {
+  } else {
     if(funcText.startsWith('.')) {
       var res = generator.get(tree.cont[1]) + funcText + '(';
       var argStart = 2;
@@ -102,5 +127,9 @@ generator.list = function(obj) {
 }
 
 module.exports.generate = function(tree) {
-  return generator[tree.type](tree);
+  var func = generator[tree.type];
+  if(!func) {
+    throw "Unexpected symbol " + JSON.stringify(tree.cont);
+  }
+  return generator[tree.type](tree) + ';';
 }

@@ -1,5 +1,3 @@
-var generator = require('./codegen');
-
 var types = {
   'list-start': {
     re: /^\(|^\[/,
@@ -14,7 +12,7 @@ var types = {
     ignore: false
   },
   'iden': {
-    re: /^[\w\-+*!@#$%\^&\d\.]+/,
+    re: /^[\w\-+*!@#$%\^&\d\.=<>]+/,
     ignore: false
   },
   'string': {
@@ -22,7 +20,7 @@ var types = {
     ignore: false
   },
   'whitespace': {
-    re: /^\s+/,
+    re: /^\s+|^;.*?\n/,
     ignore: true
   },
   'quote': {
@@ -125,8 +123,5 @@ function parseProgram(cont) {
 
 module.exports.parse = function(cont) {
   var atoms = parseProgram(cont);
-  for(var i = 0; i < atoms.length; i++) {
-    console.log(generator.generate(atoms[i]));
-  }
-  // eval(code);
+  return atoms;
 };
