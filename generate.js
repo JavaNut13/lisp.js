@@ -4,6 +4,54 @@ function Generator() {
   this.default_methods = {}
 }
 
+function blockWithReturn(gener, items) {
+  var statements = gener.getAll(items);
+  var last = statements[statements.length - 1];
+  statements[statements.length - 1] = 'return ' + last;
+  return statements.join(';\n');
+}
+
+function createMatcher(gener, items) {
+  var argsVals = items.cont[0].cont.cont;
+  var ifStatement = '';
+  var initializers = 'var ';
+  var firstMatch = true;
+  var firstInit = true;
+  for(var i = 0; i < argsVals.length; i++) {
+    if(argsVals[i].type !== 'iden') {
+      if(!firstMatch) ifStatement += '&&';
+      firstMatch = false;
+      ifStatement += 'arguments[' + i + ']===' + gener.get(argsVals[i]);
+    } else {
+      if(!firstInit) initializers += ',';
+      firstInit = false;
+      initializers += argsVals[i].cont + '=arguments[' + i + ']'
+    }
+  }
+  var code = blockWithReturn(gener, items.cont.slice(1));
+  return 'if(' + ifStatement + ') {\n' + initializers + ';\n' + code + ';\n}';
+}
+
+function createFunction(gener, items, anon) {
+  var st = anon ? -1 : 0;
+  var funcName = anon ? '' : gener.get(items[0]);
+  if(items[st + 1].type == 'quote') { // it's a single func
+    var args = gener.getAll(items[st + 1].cont.cont);
+    var code = blockWithReturn(gener, items.slice(st + 2))
+    var res = 'function ' + funcName + '(' + args.join(', ') + ') {\n';
+    res += code;
+    res += ';\n}'
+    return res;
+  } else {
+    var matches = items.slice(st + 1);
+    var res = 'function ' + funcName + '() {\n';
+    for(var i = 0; i < matches.length; i++) {
+      res += createMatcher(gener, matches[i]) + '\n';
+    }
+    return res + '\n}';
+  }
+}
+
 var gen = Generator.prototype;
 
 gen.get = function(item) {
@@ -44,28 +92,11 @@ gen.infix = function(obj) {
 }
 
 gen.builtins_fn = function(items) {
-  var args = this.getAll(items[0].cont.cont);
-  var statements = this.getAll(items.slice(1));
-  var last = statements[statements.length - 1];
-  statements[statements.length - 1] = 'return ' + last;
-  var code = statements.join(';\n');
-  var res = 'function(' + args.join(', ') + ') {\n';
-  res += code;
-  res += ';\n}'
-  return res;
+  return createFunction(this, items, true);
 }
 
 gen.builtins_defn = function(items) {
-  var funcName = this.get(items[0]);
-  var args = this.getAll(items[1].cont.cont);
-  var statements = this.getAll(items.slice(2));
-  var last = statements[statements.length - 1];
-  statements[statements.length - 1] = 'return ' + last;
-  var code = statements.join(';\n');
-  var res = 'function ' + funcName + '(' + args.join(', ') + ') {\n';
-  res += code;
-  res += ';\n}'
-  return res;
+  return createFunction(this, items);
 }
 
 gen.builtins_def = function(items) {
@@ -87,6 +118,12 @@ gen.builtins_first = function(items) {
 gen.builtins_rest = function(items) {
   var item = this.get(items[0]);
   return item + '.slice(1)';
+}
+
+gen.builtins_try = function(items) {
+  var attempt = this.get(items[0]);
+  var except = items[1] ? this.get(items[1]) : 'null';
+  return 'try {\n' + attempt + '\n} catch(error) {\n' + except + ';\n}';
 }
 
 gen.string = function(obj) {
@@ -118,6 +155,9 @@ gen.quote = function(obj) {
 
 gen.list = function(obj) {
   var funcText = this.get(obj.cont[0]);
+  if(funcText.endsWith('}')) {
+    funcText = '(' + funcText + ')';
+  }
   if(this['builtins_' + funcText]) {
     return this['builtins_' + funcText](obj.cont.slice(1));
   } else if(this.infix_operators[funcText]) {
