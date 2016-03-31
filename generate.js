@@ -154,7 +154,7 @@ module.exports.generate = function(atoms) {
   }
   var code = '';
   for(method in generator.default_methods) {
-    code += defaults[method];
+    code += defaults[method] + ';\n';
   }
   for(var i = 0; i < lines.length; i++) {
     code += lines[i];
