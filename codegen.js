@@ -1,3 +1,8 @@
+var predefs = {};
+predefs.map = "function map(items, func) {var res = []; for(var i=0;i<items.length;i++) {res.push(func(items[i]));}};"
+
+var generated_code
+
 var generator = {};
 
 generator.get = function(item) {
@@ -15,10 +20,34 @@ generator.getAll = function(items, i) {
 
 generator.builtins = {}
 
+generator.infix_operators = {
+  '+': true,
+  '-': true,
+  '/': true,
+  '*': true,
+  '%': true,
+  '&&': true,
+  '||': true
+}
+generator.infix = function(obj) {
+  var operator = generator.get(obj.cont[0]);
+  var args = generator.getAll(obj.cont.slice(1));
+  return args.join(operator);
+}
+
+generator.builtins.fn = function(items) {
+  var args = generator.getAll(items[0].cont.cont);
+  var code = 'return ' + generator.get(items[1]);
+  var res = 'function(' + args.join(', ') + ') {\n';
+  res += code;
+  res += '\n}'
+  return res;
+}
+
 generator.builtins.defn = function(items) {
   var funcName = generator.get(items[0]);
   var args = generator.getAll(items[1].cont.cont);
-  var code = generator.get(items[2]);
+  var code = 'return ' + generator.get(items[2]);
   var res = 'function ' + funcName + '(' + args.join(', ') + ') {\n';
   res += code;
   res += '\n}'
@@ -56,7 +85,9 @@ generator.list = function(obj) {
   var funcText = generator.get(obj.cont[0]);
   if(generator.builtins[funcText]) {
     return generator.builtins[funcText](obj.cont.slice(1));
-  } else {
+  } else if(generator.infix_operators[funcText]) {
+    return generator.infix(obj);
+  } else if  {
     if(funcText.startsWith('.')) {
       var res = generator.get(tree.cont[1]) + funcText + '(';
       var argStart = 2;
