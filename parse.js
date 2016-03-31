@@ -111,7 +111,7 @@ function parseList(cont) {
   }
 }
 
-function parseProgram(cont) {
+module.exports.parse = function(cont) {
   var subcont = cont;
   var atoms = [];
   while(result = parseAtom(subcont)) {
@@ -120,8 +120,3 @@ function parseProgram(cont) {
   }
   return atoms;
 }
-
-module.exports.parse = function(cont) {
-  var atoms = parseProgram(cont);
-  return atoms;
-};

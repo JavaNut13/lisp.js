@@ -1,11 +1,16 @@
+var defaults = require('./defaults');
+
 function Generator() {
+  this.default_methods = {}
 }
 
-Generator.prototype.get = function(item) {
+var gen = Generator.prototype;
+
+gen.get = function(item) {
   return this[item.type](item);
 }
 
-Generator.prototype.getAll = function(items, i) {
+gen.getAll = function(items, i) {
   i = i || 0;
   var res = []
   for(; i < items.length; i++) {
@@ -14,7 +19,7 @@ Generator.prototype.getAll = function(items, i) {
   return res;
 }
 
-Generator.prototype.infix_operators = {
+gen.infix_operators = {
   '+': true,
   '-': true,
   '/': true,
@@ -29,7 +34,7 @@ Generator.prototype.infix_operators = {
   '=': '==='
 }
 
-Generator.prototype.infix = function(obj) {
+gen.infix = function(obj) {
   var operator = this.get(obj.cont[0]);
   if(this.infix_operators[operator] !== true) {
     operator = this.infix_operators[operator];
@@ -38,7 +43,7 @@ Generator.prototype.infix = function(obj) {
   return '(' + args.join(operator) + ')';
 }
 
-Generator.prototype.builtins_fn = function(items) {
+gen.builtins_fn = function(items) {
   var args = this.getAll(items[0].cont.cont);
   var statements = this.getAll(items.slice(1));
   var last = statements[statements.length - 1];
@@ -50,7 +55,7 @@ Generator.prototype.builtins_fn = function(items) {
   return res;
 }
 
-Generator.prototype.builtins_defn = function(items) {
+gen.builtins_defn = function(items) {
   var funcName = this.get(items[0]);
   var args = this.getAll(items[1].cont.cont);
   var statements = this.getAll(items.slice(2));
@@ -63,40 +68,40 @@ Generator.prototype.builtins_defn = function(items) {
   return res;
 }
 
-Generator.prototype.builtins_def = function(items) {
+gen.builtins_def = function(items) {
   return 'var ' + this.get(items[0]) + '=' + this.get(items[1]);
 }
 
-Generator.prototype.builtins_if = function(items) {
+gen.builtins_if = function(items) {
   var condition = this.get(items[0]);
   var ifState = this.get(items[1]);
   var elseState = this.get(items[2]);
   return '(' + condition + '?' + ifState + ':' + elseState + ')';
 }
 
-Generator.prototype.builtins_first = function(items) {
+gen.builtins_first = function(items) {
   var item = this.get(items[0]);
   return item + '[0]';
 }
 
-Generator.prototype.builtins_rest = function(items) {
+gen.builtins_rest = function(items) {
   var item = this.get(items[0]);
   return item + '.slice(1)';
 }
 
-Generator.prototype.string = function(obj) {
+gen.string = function(obj) {
   return '"' + obj.cont + '"';
 }
 
-Generator.prototype.number = function(obj) {
+gen.number = function(obj) {
   return obj.cont;
 }
 
-Generator.prototype.iden = function(obj) {
+gen.iden = function(obj) {
   return obj.cont;
 }
 
-Generator.prototype.quote = function(obj) {
+gen.quote = function(obj) {
   var inner = obj.cont;
   if(inner.type === 'list') {
     var items = [];
@@ -111,13 +116,16 @@ Generator.prototype.quote = function(obj) {
   }
 }
 
-Generator.prototype.list = function(obj) {
+gen.list = function(obj) {
   var funcText = this.get(obj.cont[0]);
   if(this['builtins_' + funcText]) {
     return this['builtins_' + funcText](obj.cont.slice(1));
   } else if(this.infix_operators[funcText]) {
     return this.infix(obj);
   } else {
+    if(defaults[funcText]) {
+      this.default_methods[funcText] = true;
+    }
     if(funcText.startsWith('.')) {
       var res = this.get(obj.cont[1]) + funcText + '(';
       var argStart = 2;
@@ -133,11 +141,23 @@ Generator.prototype.list = function(obj) {
   }
 }
 
-module.exports.generate = function(tree) {
+module.exports.generate = function(atoms) {
   var generator = new Generator();
-  var func = generator[tree.type];
-  if(!func) {
-    throw "Unexpected symbol " + JSON.stringify(tree.cont);
+  var lines = [];
+  for(var i = 0; i < atoms.length; i++) {
+    var tree = atoms[i];
+    var func = generator[tree.type];
+    if(!func) {
+      throw "Unexpected symbol " + JSON.stringify(tree.cont);
+    }
+    lines.push(generator[tree.type](tree) + ';\n');
   }
-  return generator[tree.type](tree) + ';';
+  var code = '';
+  for(method in generator.default_methods) {
+    code += defaults[method];
+  }
+  for(var i = 0; i < lines.length; i++) {
+    code += lines[i];
+  }
+  return code;
 }
