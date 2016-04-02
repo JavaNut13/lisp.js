@@ -13,6 +13,9 @@ function toJS(text) {
 function runOptions(options) {
   if (options['-c']) {
     var inFiles = options['-c'];
+    if(inFiles.length === 0) {
+      inFiles = ['STDIN'];
+    }
     var outFiles = options['-o'] || [];
     for (var i = 0; i < inFiles.length; i++) {
       var file = inFiles[i] || 'STDIN';
