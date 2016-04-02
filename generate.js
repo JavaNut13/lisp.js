@@ -12,6 +12,9 @@ function blockWithReturn(gener, items) {
 }
 
 function createMatcher(gener, items) {
+  if(items.cont[0].type === 'iden' && items.cont[0].cont === 'else') {
+    return blockWithReturn(gener, items.cont.slice(1));
+  }
   var argsVals = items.cont[0].cont.cont;
   var ifStatement = '';
   var initializers = 'var ';
@@ -27,6 +30,11 @@ function createMatcher(gener, items) {
       firstInit = false;
       initializers += argsVals[i].cont + '=arguments[' + i + ']'
     }
+  }
+  if(!firstMatch) ifStatement += '&&';
+  ifStatement += 'arguments.length===' + argsVals.length
+  if(firstInit) {
+    initializers = '';
   }
   var code = blockWithReturn(gener, items.cont.slice(1));
   return 'if(' + ifStatement + ') {\n' + initializers + ';\n' + code + ';\n}';
@@ -48,7 +56,7 @@ function createFunction(gener, items, anon) {
     for(var i = 0; i < matches.length; i++) {
       res += createMatcher(gener, matches[i]) + '\n';
     }
-    return res + '\n}';
+    return res + ';throw "Unexhaustive matching";\n}';
   }
 }
 
@@ -106,7 +114,7 @@ gen.builtins_def = function(items) {
 gen.builtins_if = function(items) {
   var condition = this.get(items[0]);
   var ifState = this.get(items[1]);
-  var elseState = this.get(items[2]);
+  var elseState = items[2] ? this.get(items[2]) : 'undefined';
   return '(' + condition + '?' + ifState + ':' + elseState + ')';
 }
 
