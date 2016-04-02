@@ -1,5 +1,5 @@
 {
-  "name": "lisp.js",
+  "name": "@javanut13/lisp.js",
   "description": "Lisp to JavaScript transpiler",
   "version": "0.0.1",
   "repository": "https://github.com/javanut13/lisp.js",
