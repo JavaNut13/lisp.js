@@ -1,7 +1,7 @@
 {
   "name": "@javanut13/lisp.js",
   "description": "Lisp to JavaScript transpiler",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": "https://github.com/javanut13/lisp.js",
   "license": "MIT",
   "devDependencies": {
