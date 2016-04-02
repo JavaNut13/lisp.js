@@ -1,9 +1,7 @@
-var parser = require('./parse');
-var generator = require('./generate');
+var lispjs = require('./lispjs');
 
 String.prototype.toJS = function () {
-  var atoms = parser.parse(this);
-  return generator.generate(atoms);
+  lispjs.toJS(this);
 }
 
 String.prototype.evalLisp = function () {

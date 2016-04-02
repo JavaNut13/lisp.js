@@ -1,14 +1,7 @@
 #!/usr/bin/env node
 var fs = require('fs');
 
-var parser = require('./parse');
-var generator = require('./generate');
-
-function toJS(text) {
-  var atoms = parser.parse(text);
-  return generator.generate(atoms);
-}
-
+var lispjs = require('./lispjs');
 
 function runOptions(options) {
   if (options['-c']) {
@@ -31,7 +24,7 @@ function runOptions(options) {
       }
       func(file, function(err, data) {
         if (err) throw err;
-        var out = toJS(data.toString().trim());
+        var out = lispjs.toJS(data.toString().trim());
         if (outFile) {
           fs.writeFile(outFile, out, function(err) {
             if (err) throw err;
@@ -49,7 +42,7 @@ function runOptions(options) {
       if (file === 'STDIN') {
         file = '/dev/stdin';
       }
-      eval(toJS(fs.readFileSync(file).toString().trim()));
+      eval(lispjs.toJS(fs.readFileSync(file).toString().trim()));
     }
   }
 }

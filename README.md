@@ -3,7 +3,7 @@
 Install for CLI:
 
 ```bash
-npm install @javanut13/lisp.js
+npm install @javanut13/lisp.js -g
 ```
 
 Run it from the command line:

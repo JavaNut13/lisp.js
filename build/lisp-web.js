@@ -220,6 +220,19 @@ module.exports.generate = function(atoms) {
   return code;
 }
 },{"./defaults":1}],3:[function(require,module,exports){
+/*
+  Wrapper for including in Node.js projects (and the grunt plugin)
+*/
+var parser = require('./parse');
+var generator = require('./generate');
+
+var toJS = function(text) {
+  var atoms = parser.parse(text);
+  return generator.generate(atoms);
+}
+
+module.exports.toJS = toJS
+},{"./generate":2,"./parse":4}],4:[function(require,module,exports){
 var types = {
   'list-start': {
     re: /^\(|^\[/,
@@ -342,16 +355,14 @@ module.exports.parse = function(cont) {
   }
   return atoms;
 }
-},{}],4:[function(require,module,exports){
-var parser = require('./parse');
-var generator = require('./generate');
+},{}],5:[function(require,module,exports){
+var lispjs = require('./lispjs');
 
 String.prototype.toJS = function () {
-  var atoms = parser.parse(this);
-  return generator.generate(atoms);
+  lispjs.toJS(this);
 }
 
 String.prototype.evalLisp = function () {
   eval(this.toJS());
 }
-},{"./generate":2,"./parse":3}]},{},[4]);
+},{"./lispjs":3}]},{},[5]);
