@@ -12,5 +12,6 @@
   },
   "bin": {
     "lispjs": "src/cli.js"
-  }
+  },
+  "main": "src/lispjs.js"
 }
