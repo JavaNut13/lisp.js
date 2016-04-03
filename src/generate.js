@@ -209,3 +209,10 @@ module.exports.generate = function(atoms) {
   }
   return code;
 }
+
+module.exports.extend = function(funcName, func) {
+  if(!funcName || !func) {
+    throw "Function name and function must be present"
+  }
+  gen['builtins_' + funcName] = func
+}

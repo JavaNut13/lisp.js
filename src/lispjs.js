@@ -10,3 +10,4 @@ var toJS = function(text) {
 }
 
 module.exports.toJS = toJS
+module.exports.extend = generator.extend

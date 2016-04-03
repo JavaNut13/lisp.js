@@ -15,8 +15,8 @@ var types = {
     re: /^[\w\-+*!@#$%\^&\d\.=<>:]+/,
     ignore: false
   },
-  'string': {
-    re: /^"(.*?)"/,
+  'string-start': {
+    re: /^"/,
     ignore: false
   },
   'whitespace': {
@@ -44,6 +44,19 @@ function parseType(cont) {
   }
 }
 
+function parseString(cont) {
+  var i = 1;
+  var len = cont.length;
+  while(i < len && cont[i] != '"') {
+    i += cont[i] === '\\' ? 2 : 1;
+  }
+  var res = {
+    type: 'string',
+    cont: cont.substring(1, i)
+  };
+  return { length: i + 1, result: res };
+}
+
 function parseAtom(cont) {
   var match = parseType(cont);
   if(!match) {
@@ -53,6 +66,8 @@ function parseAtom(cont) {
   delete match.length;
   if(match.type === 'list-start') {
     return parseList(cont);
+  } else if(match.type === 'string-start') {
+    return parseString(cont);
   } else if(match.type === 'whitespace') {
     var res = parseAtom(cont.substring(len));
     res.length += len;
