@@ -7,6 +7,14 @@ var types = {
     re: /^\)|^\]/,
     ignore: false
   },
+  'object-start': {
+    re: /^\{/,
+    ignore: false
+  },
+  'object-end': {
+    re: /^\}/,
+    ignore: false
+  },
   'number': {
     re: /^\d*\.\d+|^\d+/,
     ignore: false
@@ -57,6 +65,49 @@ function parseString(cont) {
   return { length: i + 1, result: res };
 }
 
+function parseKeyValue(cont) {
+  var res = parseAtom(cont);
+  var key = res.result;
+  var len = res.length;
+  if(key.type === 'object-end') {
+    return { length: len };
+  }
+  cont = cont.substring(len);
+  res = parseAtom(cont);
+  len += res.length;
+  var val = res.result;
+  if(val.type === 'object-end') {
+    throw 'invalid object';
+  }
+  return { length: len, key: key.cont.toString(), value: val };
+}
+
+function parseObject(cont) {
+  var subcont = cont.substring(1);
+  var totalLength = 1;
+  var len;
+  var elems = {};
+  while(result = parseKeyValue(subcont)) {
+    var len = result.length;
+    if(result.key === undefined) {
+      totalLength += len;
+      break;
+    }
+    var key = result.key;
+    var value = result.value;
+    elems[key] = value;
+    subcont = subcont.substring(len);
+    totalLength += len;
+  }
+  return {
+    result: {
+      type: 'object',
+      cont: elems
+    },
+    length: totalLength
+  };
+}
+
 function parseAtom(cont) {
   var match = parseType(cont);
   if(!match) {
@@ -68,6 +119,8 @@ function parseAtom(cont) {
     return parseList(cont);
   } else if(match.type === 'string-start') {
     return parseString(cont);
+  } else if(match.type === 'object-start') {
+    return parseObject(cont);
   } else if(match.type === 'whitespace') {
     var res = parseAtom(cont.substring(len));
     res.length += len;

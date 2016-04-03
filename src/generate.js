@@ -1,66 +1,13 @@
 var defaults = require('./defaults');
+var builtins = require('./builtins');
 
 function Generator() {
   this.default_methods = {};
 }
 
-function blockWithReturn(gener, items) {
-  var statements = gener.getAll(items);
-  var last = statements[statements.length - 1];
-  statements[statements.length - 1] = 'return ' + last;
-  return statements.join(';\n');
-}
-
-function createMatcher(gener, items) {
-  if(items.cont[0].type === 'iden' && items.cont[0].cont === 'else') {
-    return blockWithReturn(gener, items.cont.slice(1));
-  }
-  var argsVals = items.cont[0].cont.cont;
-  var ifStatement = '';
-  var initializers = 'var ';
-  var firstMatch = true;
-  var firstInit = true;
-  for(var i = 0; i < argsVals.length; i++) {
-    if(argsVals[i].type !== 'iden') {
-      if(!firstMatch) ifStatement += '&&';
-      firstMatch = false;
-      ifStatement += 'arguments[' + i + ']===' + gener.get(argsVals[i]);
-    } else {
-      if(!firstInit) initializers += ',';
-      firstInit = false;
-      initializers += argsVals[i].cont + '=arguments[' + i + ']'
-    }
-  }
-  if(!firstMatch) ifStatement += '&&';
-  ifStatement += 'arguments.length===' + argsVals.length
-  if(firstInit) {
-    initializers = '';
-  }
-  var code = blockWithReturn(gener, items.cont.slice(1));
-  return 'if(' + ifStatement + ') {\n' + initializers + ';\n' + code + ';\n}';
-}
-
-function createFunction(gener, items, anon) {
-  var st = anon ? -1 : 0;
-  var funcName = anon ? '' : gener.get(items[0]);
-  if(items[st + 1].type == 'quote') { // it's a single func
-    var args = gener.getAll(items[st + 1].cont.cont);
-    var code = blockWithReturn(gener, items.slice(st + 2))
-    var res = 'function ' + funcName + '(' + args.join(', ') + ') {\n';
-    res += code;
-    res += ';\n}'
-    return res;
-  } else {
-    var matches = items.slice(st + 1);
-    var res = 'function ' + funcName + '() {\n';
-    for(var i = 0; i < matches.length; i++) {
-      res += createMatcher(gener, matches[i]) + '\n';
-    }
-    return res + ';throw "Unexhaustive matching";\n}';
-  }
-}
-
 var gen = Generator.prototype;
+
+builtins(gen);
 
 gen.get = function(item) {
   return this[item.type](item);
@@ -99,41 +46,6 @@ gen.infix = function(obj) {
   return '(' + args.join(operator) + ')';
 }
 
-gen.builtins_fn = function(items) {
-  return createFunction(this, items, true);
-}
-
-gen.builtins_defn = function(items) {
-  return createFunction(this, items);
-}
-
-gen.builtins_def = function(items) {
-  return 'var ' + this.get(items[0]) + '=' + this.get(items[1]);
-}
-
-gen.builtins_if = function(items) {
-  var condition = this.get(items[0]);
-  var ifState = this.get(items[1]);
-  var elseState = items[2] ? this.get(items[2]) : 'undefined';
-  return '(' + condition + '?' + ifState + ':' + elseState + ')';
-}
-
-gen.builtins_first = function(items) {
-  var item = this.get(items[0]);
-  return item + '[0]';
-}
-
-gen.builtins_rest = function(items) {
-  var item = this.get(items[0]);
-  return item + '.slice(1)';
-}
-
-gen.builtins_try = function(items) {
-  var attempt = this.get(items[0]);
-  var except = items[1] ? this.get(items[1]) : 'null';
-  return 'try {\n' + attempt + '\n} catch(error) {\n' + except + ';\n}';
-}
-
 gen.string = function(obj) {
   return '"' + obj.cont + '"';
 }
@@ -159,6 +71,18 @@ gen.quote = function(obj) {
   } else {
     return this.get(item);
   }
+}
+
+gen.object = function(obj) {
+  var res = '{ ';
+  var items = obj.cont;
+  var first = true;
+  for(key in items) {
+    if(!first) res += ', ';
+    first = false;
+    res += '"' + key + '": ' + this.get(items[key]);
+  }
+  return res + ' }';
 }
 
 gen.list = function(obj) {
@@ -212,7 +136,7 @@ module.exports.generate = function(atoms) {
 
 module.exports.extend = function(funcName, func) {
   if(!funcName || !func) {
-    throw "Function name and function must be present"
+    throw "Function name and function must be present";
   }
   gen['builtins_' + funcName] = func
 }
