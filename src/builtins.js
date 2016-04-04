@@ -107,4 +107,10 @@ module.exports = function(gen) {
     }
     return res;
   }
+  
+  gen['builtins_:'] = function(items) {
+    var obj = this.get(items[1]);
+    var index = this.get(items[0]);
+    return obj + '[' + index + ']';
+  }
 }

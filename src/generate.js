@@ -3,9 +3,29 @@ var builtins = require('./builtins');
 
 function Generator() {
   this.default_methods = {};
+  this.iden_to_js = {};
+  this.used_idens = {};
 }
 
 var gen = Generator.prototype;
+
+gen.get_iden = function(iden) {
+  if(this.iden_to_js[iden]) {
+    return this.iden_to_js[iden];
+  } else {
+    var san = iden.replace(/\W+/, '');
+    if(san === '') {
+      san = 'iden_';
+    }
+    var i = 0;
+    while(this.used_idens[san + i]) {
+      i++;
+    }
+    this.used_idens[san + i] = true;
+    this.iden_to_js[iden] = san + i;
+    return san + i;
+  }
+}
 
 builtins(gen);
 
@@ -99,10 +119,10 @@ gen.list = function(obj) {
       this.default_methods[funcText] = true;
     }
     if(funcText.startsWith('.')) {
-      var res = this.get(obj.cont[1]) + funcText + '(';
+      var res = this.get(obj.cont[1]) + '.' + funcText + '(';
       var argStart = 2;
     } else if(funcText.startsWith(':')) {
-      return this.get(obj.cont[1]) + '.' + funcText.slice(1);
+      return this.get(obj.cont[1]) + '[' + funcText.slice(1) + ']';
     } else {
       var res = funcText + '(';
       var argStart = 1;
