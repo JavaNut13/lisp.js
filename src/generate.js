@@ -13,17 +13,18 @@ gen.get_iden = function(iden) {
   if(this.iden_to_js[iden]) {
     return this.iden_to_js[iden];
   } else {
-    var san = iden.replace(/\W+/, '');
+    var san = iden.replace(/[^a-z^0-9\.]+/ig, '');
     if(san === '') {
       san = 'iden_';
     }
     var i = 0;
-    while(this.used_idens[san + i]) {
+    while(this.used_idens[san + (i == 0 ? '' : i)]) {
       i++;
     }
-    this.used_idens[san + i] = true;
-    this.iden_to_js[iden] = san + i;
-    return san + i;
+    san = san + (i == 0 ? '' : i);
+    this.used_idens[san] = true;
+    this.iden_to_js[iden] = san;
+    return san;
   }
 }
 
@@ -58,7 +59,7 @@ gen.infix_operators = {
 }
 
 gen.infix = function(obj) {
-  var operator = this.get(obj.cont[0]);
+  var operator = obj.cont[0].cont;
   if(this.infix_operators[operator] !== true) {
     operator = this.infix_operators[operator];
   }
@@ -75,7 +76,7 @@ gen.number = function(obj) {
 }
 
 gen.iden = function(obj) {
-  return obj.cont;
+  return this.get_iden(obj.cont);
 }
 
 gen.quote = function(obj) {
@@ -106,31 +107,36 @@ gen.object = function(obj) {
 }
 
 gen.list = function(obj) {
-  var funcText = this.get(obj.cont[0]);
+  var first = obj.cont[0];
+  var funcText;
+  if(first.type === 'iden') {
+    funcText = first.cont;
+    if(this['builtins_' + funcText]) {
+      return this['builtins_' + funcText](obj.cont.slice(1));
+    } else if(this.infix_operators[funcText]) {
+      return this.infix(obj);
+    }
+  }
+  var firstChar = obj.cont[0].type === 'iden' && obj.cont[0].cont[0];
+  funcText = this.get(obj.cont[0]);
   if(funcText.endsWith('}')) {
     funcText = '(' + funcText + ')';
   }
-  if(this['builtins_' + funcText]) {
-    return this['builtins_' + funcText](obj.cont.slice(1));
-  } else if(this.infix_operators[funcText]) {
-    return this.infix(obj);
-  } else {
-    if(defaults[funcText]) {
-      this.default_methods[funcText] = true;
-    }
-    if(funcText.startsWith('.')) {
-      var res = this.get(obj.cont[1]) + '.' + funcText + '(';
-      var argStart = 2;
-    } else if(funcText.startsWith(':')) {
-      return this.get(obj.cont[1]) + '[' + funcText.slice(1) + ']';
-    } else {
-      var res = funcText + '(';
-      var argStart = 1;
-    }
-    res += this.getAll(obj.cont, argStart).join(', ');
-    res += ')'
-    return res;
+  if(defaults[funcText]) {
+    this.default_methods[funcText] = true;
   }
+  if(firstChar === '.') {
+    var res = this.get(obj.cont[1]) + '.' + funcText + '(';
+    var argStart = 2;
+  } else if(firstChar === ':') {
+    return this.get(obj.cont[1]) + '["' + funcText + '"]';
+  } else {
+    var res = funcText + '(';
+    var argStart = 1;
+  }
+  res += this.getAll(obj.cont, argStart).join(', ');
+  res += ')';
+  return res;
 }
 
 module.exports.generate = function(atoms) {
