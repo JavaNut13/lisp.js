@@ -157,26 +157,14 @@ function parseList(cont) {
     subcont = subcont.substring(len);
     totalLength += len;
   }
-  if(isLiteral) {
-    return {
-      result: {
-        type: 'quote',
-        cont: {
-          type: 'list',
-          cont: elems
-        }
-      },
-      length: totalLength
-    }
-  } else {
-    return {
-      result: {
-        type: 'list',
-        cont: elems
-      },
-      length: totalLength
-    };
-  }
+  return {
+    result: {
+      type: 'list',
+      cont: elems,
+      literal: isLiteral
+    },
+    length: totalLength
+  };
 }
 
 module.exports.parse = function(cont) {

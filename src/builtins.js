@@ -9,7 +9,7 @@ function createMatcher(gener, items) {
   if(items.cont[0].type === 'iden' && items.cont[0].cont === 'else') {
     return blockWithReturn(gener, items.cont.slice(1));
   }
-  var argsVals = items.cont[0].cont.cont;
+  var argsVals = items.cont[0].cont;
   var ifStatement = '';
   var initializers = 'var ';
   var firstMatch = true;
@@ -26,7 +26,7 @@ function createMatcher(gener, items) {
     }
   }
   if(!firstMatch) ifStatement += '&&';
-  ifStatement += 'arguments.length===' + argsVals.length
+  ifStatement += 'arguments.length===' + argsVals.length;
   if(firstInit) {
     initializers = '';
   }
@@ -37,8 +37,8 @@ function createMatcher(gener, items) {
 function createFunction(gener, items, anon) {
   var st = anon ? -1 : 0;
   var funcName = anon ? '' : gener.get(items[0]);
-  if(items[st + 1].type == 'quote') { // it's a single func
-    var args = gener.getAll(items[st + 1].cont.cont);
+  if(items[st + 1].literal) { // it's a single func
+    var args = gener.getAll(items[st + 1].cont);
     var code = blockWithReturn(gener, items.slice(st + 2))
     var res = 'function ' + funcName + '(' + args.join(', ') + ') {\n';
     res += code;
@@ -112,5 +112,14 @@ module.exports = function(gen) {
     var obj = this.get(items[1]);
     var index = this.get(items[0]);
     return obj + '[' + index + ']';
+  }
+  
+  gen.builtins_run = function(items) {
+    var val = this.get(items[0]);
+    this.default_methods['map'] = true;
+    var meta = 'var __meta = ' + val;
+    var func = 'function(i){return eval("typeof " + i + " !== \'undefined\' && " + i + " || undefined") }';
+    var all = '__meta.func.apply(this, map(' + func + ', __meta.undefs))'
+    return '(function() {' + meta + '; return ' + all + ' })()';
   }
 }
