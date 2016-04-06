@@ -74,6 +74,9 @@ function parseKeyValue(cont) {
   }
   cont = cont.substring(len);
   res = parseAtom(cont);
+  if(!res) {
+    throw 'Expected value or }';
+  }
   len += res.length;
   var val = res.result;
   if(val.type === 'object-end') {
@@ -143,16 +146,18 @@ function parseList(cont) {
   var lastMatch;
   var len;
   var elems = [];
-  while(result = parseAtom(subcont)) {
+  while(true) {
+    result = parseAtom(subcont);
+    if(!result) {
+      throw "Expected list end!";
+    }
     lastMatch = result.result;
     len = result.length;
-    if(lastMatch.cont) {
-      if(lastMatch.type === 'list-end') {
-        totalLength += len;
-        break;
-      } else {
-        elems.push(lastMatch)
-      }
+    if(lastMatch.type === 'list-end') {
+      totalLength += len;
+      break;
+    } else {
+      elems.push(lastMatch)
     }
     subcont = subcont.substring(len);
     totalLength += len;

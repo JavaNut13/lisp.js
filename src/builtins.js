@@ -11,7 +11,7 @@ function createMatcher(gener, items) {
   }
   var argsVals = items.cont[0].cont;
   var ifStatement = '';
-  var initializers = 'var ';
+  var initializers = 'const ';
   var firstMatch = true;
   var firstInit = true;
   for(var i = 0; i < argsVals.length; i++) {
@@ -58,13 +58,19 @@ module.exports = function(gen) {
   gen.builtins_fn = function(items) {
     return createFunction(this, items, true);
   }
+  
+  gen['builtins_->'] = function(items) {
+    var emptyArgs = { type: 'list', cont: [], literal: true };
+    items.splice(0, 0, emptyArgs);
+    return createFunction(this, items, true);
+  }
 
   gen.builtins_defn = function(items) {
     return createFunction(this, items);
   }
 
   gen.builtins_def = function(items) {
-    return 'var ' + this.get(items[0]) + '=' + this.get(items[1]);
+    return 'const ' + this.get(items[0]) + '=' + this.get(items[1]);
   }
 
   gen.builtins_set = function(items) {
@@ -95,7 +101,7 @@ module.exports = function(gen) {
   }
 
   gen.builtins_require = function(items) {
-    var res = 'var ';
+    var res = 'const ';
     var first = true;
     for(var i = 0; i < items.length; i++) {
       if(!first) res += ', ';
@@ -117,7 +123,7 @@ module.exports = function(gen) {
   gen.builtins_run = function(items) {
     var val = this.get(items[0]);
     this.default_methods['map'] = true;
-    var meta = 'var __meta = ' + val;
+    var meta = 'const __meta = ' + val;
     var func = 'function(i){return eval("typeof " + i + " !== \'undefined\' && " + i + " || undefined") }';
     var all = '__meta.func.apply(this, map(' + func + ', __meta.undefs))'
     return '(function() {' + meta + '; return ' + all + ' })()';

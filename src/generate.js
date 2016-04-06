@@ -99,22 +99,18 @@ gen.iden = function(obj) {
 
 gen.quote = function(obj) {
   var inner = obj.cont;
-  if (inner.type === 'list') {
-    var undefs = [];
-    getUndefined(this, obj, function(item) {
-      undefs.push(item);
-    });
-    var block = this.get(inner);
-    var args = undefs.join(', ');
-    for (var i = 0; i < undefs.length; i++) {
-      undefs[i] = '"' + undefs[i] + '"';
-    }
-    var start = '{ undefs: [' + undefs.join(', ') + '],';
-    var end = 'func: function(' + args + ') {' + block + ';} }';
-    return start + end;
-  } else {
-    return this.get(item);
+  var undefs = [];
+  getUndefined(this, obj, function(item) {
+    undefs.push(item.split('.')[0]);
+  });
+  var block = this.get(inner);
+  var args = undefs.join(', ');
+  for (var i = 0; i < undefs.length; i++) {
+    undefs[i] = '"' + undefs[i] + '"';
   }
+  var start = '{ undefs: [' + undefs.join(', ') + '],';
+  var end = 'func: function(' + args + ') { return ' + block + ';} }';
+  return start + end;
 }
 
 gen.object = function(obj) {
